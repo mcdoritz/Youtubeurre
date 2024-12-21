@@ -7,4 +7,3 @@
 .idea/
 *.log
 *.cache
-!/var/data/
