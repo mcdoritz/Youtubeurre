@@ -2,8 +2,22 @@
 
 namespace App\Service;
 
+use Doctrine\ORM\EntityManagerInterface;
+
 class FileManager
 {
+
+    private string $projectDir;
+
+    public function __construct(string $projectDir) {
+
+        $this->projectDir = $projectDir;
+    }
+
+    public function getAbsolutePath(string $path): string
+    {
+        return $this->projectDir . DIRECTORY_SEPARATOR . $path;
+    }
 
     public function deleteFolder(string $folderPath): bool
     {
@@ -33,14 +47,17 @@ class FileManager
     }
 
     public function createDirectory(string $path): void {
-        if (!file_exists($path) && !mkdir($path, 0777, true) && !is_dir($path)) {
-            throw new \RuntimeException(sprintf('Le répertoire "%s" n\'a pas pu être créé.', $path));
+        $absolutePath = $this->getAbsolutePath('data' . $path);
+        //dd($absolutePath);
+        if (!file_exists($absolutePath) && !mkdir($absolutePath, 0777, true) && !is_dir($absolutePath)) {
+            throw new \RuntimeException(sprintf('Le répertoire "%s" n\'a pas pu être créé.', $absolutePath));
         }
     }
 
     public function isWritable(string $path): void {
-        if (!is_writable($path)) {
-            throw new \RuntimeException(sprintf('Le répertoire "%s" n\'est pas accessible en écriture.', $path));
+        $absolutePath = $this->getAbsolutePath('data' . $path);
+        if (!is_writable($absolutePath)) {
+            throw new \RuntimeException(sprintf('Le répertoire "%s" n\'est pas accessible en écriture.', $absolutePath));
         }
     }
 }

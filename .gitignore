@@ -1,6 +1,10 @@
 /vendor/
 /data/
+/var/
+/var/cache/
+/public/downloaded/
 .env
 .idea/
 *.log
 *.cache
+!/var/data/

@@ -9,15 +9,13 @@ use Symfony\Component\Filesystem\Filesystem;
 class MediaListManager {
     private ProcessExecutor $processExecutor;
     private FileManager $fileManager;
-    private string $projectDir;
 
     private EntityManagerInterface $entityManager;
 
-    public function __construct(ProcessExecutor $processExecutor, FileManager $fileManager, EntityManagerInterface $entityManager, string $projectDir) {
+    public function __construct(ProcessExecutor $processExecutor, FileManager $fileManager, EntityManagerInterface $entityManager) {
         $this->processExecutor = $processExecutor;
         $this->fileManager = $fileManager;
         $this->entityManager = $entityManager;
-        $this->projectDir = $projectDir;
     }
 
     public function getMediaListInfos(MediaList $mediaList): void {
@@ -48,7 +46,7 @@ class MediaListManager {
     }
 
     public function downloadMediaListInfos(MediaList $mediaList): void {
-        $path = dirname(__DIR__, 2). DIRECTORY_SEPARATOR . $mediaList->getPath();
+        $path = $this->fileManager->getAbsolutePath('data' . DIRECTORY_SEPARATOR . $mediaList->getPath());
         $title = $mediaList->getTitle();
         $url = $mediaList->getUrl();
 
@@ -74,10 +72,9 @@ class MediaListManager {
         if($path[0] != DIRECTORY_SEPARATOR) {
             $path = DIRECTORY_SEPARATOR . $path;
         }
-        $path = 'data' . $path;
         $this->fileManager->createDirectory($path);
         $this->fileManager->isWritable($path);
-        $mediaList->setPath($path);
+
         return true;
     }
 
@@ -112,13 +109,14 @@ class MediaListManager {
 
     public function getCopiedPosterFileDestination(MediaList $mediaList) : string
     {
-        $destinationDir = $this->projectDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'downloaded'. DIRECTORY_SEPARATOR .'posters'. DIRECTORY_SEPARATOR;
+        $destinationDir = $this->fileManager->getAbsolutePath('public' . DIRECTORY_SEPARATOR . 'downloaded'. DIRECTORY_SEPARATOR .'posters'. DIRECTORY_SEPARATOR);
+
         return $destinationDir . $mediaList->getTitle() . '.jpg';
     }
 
     public function getMediaListFolder(MediaList $mediaList) : string
     {
-        return $this->projectDir . DIRECTORY_SEPARATOR . $mediaList->getPath() . DIRECTORY_SEPARATOR . $mediaList->getTitle();
+        return $this->fileManager->getAbsolutePath('data' . DIRECTORY_SEPARATOR . $mediaList->getPath() . DIRECTORY_SEPARATOR . $mediaList->getTitle());
     }
 
     public function getPosterFileSource(MediaList $mediaList) : string

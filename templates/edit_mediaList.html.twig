@@ -47,7 +47,7 @@
         <div class="form-group">
             {{ form_label(form.path) }}
             <div class="input-group">
-                {{ form_widget(form.path) }}
+                {{ form_widget(form.path, { 'attr': {'readonly': 'readonly'} }) }}
             </div>
             {{ form_errors(form.path) }}
         </div>
