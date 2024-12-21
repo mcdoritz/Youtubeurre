@@ -1,7 +1,7 @@
 /vendor/
 /data/
-/var/
 /var/cache/
+/var/log/
 /public/downloaded/
 .env
 .idea/
