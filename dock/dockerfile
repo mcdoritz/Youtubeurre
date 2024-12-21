@@ -1,0 +1,52 @@
+FROM python:3.10-slim
+
+# Ajouter les chemins potentiels de yt-dlp au PATH
+ENV PATH="/root/.local/bin:$PATH"
+
+# Installer yt-dlp, ffmpeg, et cron
+RUN echo "Installation des dépendances..."
+RUN apt-get update && apt-get install -y \
+    procps \
+    ffmpeg \
+    cron \
+    apache2 \
+    libapache2-mod-php \
+    php \
+    && pip install yt-dlp \
+    && apt-get clean
+
+
+
+RUN echo "Copie des fichiers"
+# Copier les fichiers nécessaires dans le conteneur
+COPY download_all.sh /usr/local/bin/download_all.sh
+COPY download_playlists.sh /usr/local/bin/download_playlists.sh
+COPY download_channels.sh /usr/local/bin/download_channels.sh
+COPY config/urls_playlists.txt /config/urls_playlists.txt
+COPY config/urls_channels.txt /config/urls_channels.txt
+
+# Configurer Apache
+RUN echo "Chercher l'Indien..."
+COPY src /var/www/html/
+RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
+
+# Configurer Apache pour prioriser index.php
+RUN sed -i 's/DirectoryIndex .*/DirectoryIndex index.php index.html index.cgi index.pl index.xhtml index.htm/' /etc/apache2/mods-enabled/dir.conf
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+RUN echo "Permissions appropriées..."
+# Donner les permissions aux scripts
+RUN chmod +x /usr/local/bin/*.sh
+
+RUN echo "Préparation de cronjob..."
+# Ajouter le cronjob
+RUN echo "30 3 * * * root /usr/local/bin/download_all.sh >> /var/log/cron.log 2>&1" > /etc/cron.d/dorizonerr
+
+RUN echo "Permissions appropriées pour le cronjob..."
+# Appliquer les permissions correctes au cronjob
+RUN chmod 0644 /etc/cron.d/dorizonerr
+
+RUN echo "Configuration de cronjob..."
+# Configurer cron pour qu'il soit exécuté en tant que service
+RUN touch /var/log/cron.log
+CMD cron && /usr/local/bin/download_all.sh & apachectl -D FOREGROUND

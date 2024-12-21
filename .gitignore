@@ -1,0 +1,6 @@
+/vendor/
+/data/
+.env
+.idea/
+*.log
+*.cache

@@ -1,0 +1,14 @@
+services:
+  yt-dlp-downloader:
+    image: dorizonerr
+    container_name: dorizonerr
+    build:
+      context: .  # Le contexte est le répertoire contenant votre Dockerfile
+    ports:
+      - "9876:80"  # Mapper le port 80 du conteneur vers le port 8080 de l'hôte
+    volumes:
+      - /mnt/DiscoveryHub/VIDEO/TUBE/YOUTUBE:/data  # Monte le dossier local `./data` vers `/data` dans le conteneur
+      - /home/mcdoritz/docker/dorizonerr/config:/config
+      - /home/mcdoritz/docker/dorizonerr/archive:/archive
+      - /home/mcdoritz/docker/dorizonerr/logs:/logs
+    restart: unless-stopped
