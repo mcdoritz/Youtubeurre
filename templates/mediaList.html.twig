@@ -19,38 +19,41 @@
 
     {% if mediaList is not empty %}
 
-        <div class="mediaList-container">
-            <div class="mediaList-poster-container">
+        <div class="grid">
+
+            <article class="mediaList-poster-container">
                 <img src="{{ asset('downloaded/posters/' ~ mediaList.title ~ '.jpg') }}"
                      onerror="this.onerror=null; this.src='{{ asset('downloaded/default-poster.jpg') }}';"
                      class="mediaList-poster mediaList-poster-shadowed"
                      alt="Poster de {{ mediaList.title }}"
                 />
-                {% set healthClass = mediaList.lastUpdateResult is same as(true)
-                    ? 'good-health'
-                    : (mediaList.lastUpdateResult is same as(false) ? 'bad-health' : 'unknown-health') %}
 
-                {% set healthText = mediaList.lastUpdateResult is same as(true)
-                    ? 'GOOD'
-                    : (mediaList.lastUpdateResult is same as(false) ? 'BAD' : 'UNKNOWN') %}
+                {% if mediaList.lastUpdateResult is same as(true) %}
+                    {% set healthColor = 'green-400' %}
+                    {% set healthText = 'GOOD' %}
+                    {% set resultText = ' avec succès'  %}
+                {% elseif mediaList.lastUpdateResult is same as(false) %}
+                    {% set healthColor = 'red-400' %}
+                    {% set healthText = 'BAD' %}
+                    {% set resultText = ' mais a échoué !' %}
+                {% elseif mediaList.lastUpdateResult is null %}
+                    {% set healthColor = 'amber-300' %}
+                    {% set healthText = 'UNKNOWN' %}
+                {% endif %}
 
-                <button class="pill-button {{ healthClass }}">
-                    {{ healthText }} HEALTH
-                </button>
-            </div>
-            <div>
+                <blockquote class="pico-color-{{ healthColor }}">
+                    <b>{{ healthText }} HEALTH </b>
+                </blockquote>
+            </article>
+            <article>
                 <h3>Caractéristiques :</h3>
                 <ul class="carac-sett-list">
                     <li>Url : <a href="{{ mediaList.url }}" target="_blank">{{ mediaList.url }}</a>&#8599;</li>
                     <li>Contient {{ mediaList.totalVideos }} vidéo{{ mediaList.totalVideos > 1 ? 's' : '' }}</li>
                     <li>{{ mediaList.downloadedVideos }} vidéos ont été téléchargées</li>
                     <li>{{ mediaList.deletedVideos }} vidéos ont été supprimées</li>
-                    <li>Dernier scan :
-                        {{ mediaList.updatedAt is empty
-                        ? 'jamais fait'
-                        : 'le ' ~ mediaList.updatedAt|date("j F Y à H\\hi") ~
-                        (mediaList.lastUpdateResult == true ? ' avec succès' : ' mais a échoué !')
-                        }}
+                    <li>Dernier scan : <br style="margin-bottom: .5em">
+                        {{ mediaList.updatedAt is null ? 'Jamais fait' : 'Fait le ' ~ mediaList.updatedAt|date("j F Y à H\\hi") ~ resultText }}
                     </li>
                 </ul>
                 <h3>Réglages :</h3>
@@ -63,81 +66,134 @@
                     <li>Qualité : {{ mediaList.quality > 0 ? mediaList.quality ~ '/3' : 'Audio seulement' }}</li>
                     <li>Chemin de téléchargement : {{ mediaList.path }}</li>
                 </ul>
+                <a href="#" role="button">
+                    Scanner
+                </a>
+                <a href="{{ path('edit.mediaList', {id: mediaList.id}) }}" role="button">
+                    Modifier
+                </a>
+                <button class="secondary" data-target="modal-archive" onclick="toggleModal(event)">
+                    {{ mediaList.archived == 'true' ? 'Activer' : 'Archiver' }}
+                </button>
+                <button class="contrast" data-target="modal-delete" onclick="toggleModal(event)">
+                    Supprimer
+                </button>
+                <a class="outline" style="margin-top:1em" href="{{  mediaList.archived == 'true' ? path('index.archived') : path('index') }}" role="button">
+                    Revenir {{ mediaList.archived == 'true' ? 'aux archives' : 'à l\'index' }}
+                </a>
+            </article>
+            <article>
+                <h3>Liste des vidéos :</h3>
+                <table id="index-videos">
+                    <thead>
+                    <tr>
+                        <th>Titre</th>
+                        <th>Date</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for media in medias %}
+                        <tr>
+                            <td><a href="#">{{ media.title }}</a></td>
+                            <td><a href="#">{{ media.download_date|default('Pas DL') }}</a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </article>
+
+        </div>
+
+
+        <!-- --------------------------- Modales --------------------------- -->
+
+        <dialog id="modal-archive">
+            <article>
+                <header>
+                    <button aria-label="Close" rel="prev" data-target="modal-archive" onclick="toggleModal(event)"></button>
+                    <h3>Confirmer {{ mediaList.archived == 'true' ? 'l\'activation' : 'l\'archivage' }} ?</h3>
+                </header>
                 <p>
-                    <a href="#" class="button download-button">Scanner</a>
-                    <a href="{{ path('edit.mediaList', {id: mediaList.id}) }}" class="button edit-button">Modifier</a>
-                    <a href="{{ path('arch.mediaList', {id: mediaList.id}) }}" class="button arch-button" id="arch-button">{{  mediaList.archived == 'true' ? 'Activer' : 'Archiver' }}</a>
-                    <a href="{{ path('delete.mediaList', {id: mediaList.id}) }}" class="button del-button" id="del-button">Supprimer</a>
+                    Cras sit amet maximus risus. Pellentesque sodales odio sit amet augue finibus
+                    pellentesque. Nullam finibus risus non semper euismod.
                 </p>
-                <p style="margin-top:4em">
-                    <a href="{{  mediaList.archived == 'true' ? path('index.archived') : path('index') }}" class="button add-button">Revenir {{ mediaList.archived == 'true' ? 'aux archives' : 'à l\'index' }}</a>
+                <footer>
+                    <button role="button" class="secondary" data-target="modal-archive" onclick="toggleModal(event)">
+                        Annuler
+                    </button>
+                    <button autofocus="" data-target="modal-archive">
+                        <a href="{{ path('arch.mediaList', {id: mediaList.id}) }}">Confirmer</a>
+                    </button>
+                </footer>
+            </article>
+        </dialog>
+
+        <dialog id="modal-delete">
+            <article>
+                <header>
+                    <button aria-label="Close" rel="prev" data-target="modal-delete" onclick="toggleModal(event)"></button>
+                    <h3>Confirmer la suppression ?</h3>
+                </header>
+                <p>
+                    Cras sit amet maximus risus. Pellentesque sodales odio sit amet augue finibus
+                    pellentesque. Nullam finibus risus non semper euismod.
                 </p>
-            </div>
-        </div>
-
-
-        <!-- Modales -->
-        <div id="confirm-popup-arch" class="popup-overlay" style="display: none;">
-            <div class="popup-content">
-                <p>Confirmer {{ mediaList.archived == 'true' ? 'l\'activation' : 'l\'archivage' }} ?</p>
-                <button id="arch-yes" class="button">Oui</button>
-                <button id="arch-no" class="button">Non</button>
-            </div>
-        </div>
-
-        <div id="confirm-popup-delete" class="popup-overlay" style="display: none;">
-            <div class="popup-content">
-                <p>Confirmer la suppression ?</p>
-                <button id="delete-yes" class="button">Oui</button>
-                <button id="delete-no" class="button">Non</button>
-            </div>
-        </div>
+                <footer>
+                    <button role="button" class="secondary" data-target="modal-delete" onclick="toggleModal(event)">
+                        Annuler
+                    </button>
+                    <button autofocus="" data-target="modal-delete">
+                        <a href="{{ path('delete.mediaList', {id: mediaList.id}) }}">Confirmer</a>
+                    </button>
+                </footer>
+            </article>
+        </dialog>
 
         <script>
-            // Modale Archivage
-            document.addEventListener("DOMContentLoaded", function() {
-                const archButton = document.getElementById('arch-button');
-                const popupArch = document.getElementById('confirm-popup-arch');
-                const archYes = document.getElementById('arch-yes');
-                const archNo = document.getElementById('arch-no');
-
-                archButton.addEventListener('click', function(event) {
-                    event.preventDefault(); // Empêche le lien par défaut
-                    popupArch.style.display = 'flex';
-                });
-
-                archYes.addEventListener('click', function() {
-                    // Rediriger ou exécuter une action ici
-                    window.location.href = archButton.href; // Exemple pour suivre le lien
-                });
-
-                archNo.addEventListener('click', function() {
-                    popupArch.style.display = 'none'; // Cache la popup
-                });
-            });
-
-            // Modale Delete
-            document.addEventListener("DOMContentLoaded", function() {
-                const delButton = document.getElementById('del-button');
-                const popupDelete = document.getElementById('confirm-popup-delete');
-                const deleteYes = document.getElementById('delete-yes');
-                const deleteNo = document.getElementById('delete-no');
-
-                delButton.addEventListener('click', function(event) {
-                    event.preventDefault(); // Empêche le lien par défaut
-                    popupDelete.style.display = 'flex';
-                });
-
-                deleteYes.addEventListener('click', function() {
-                    // Rediriger ou exécuter une action ici
-                    window.location.href = delButton.href; // Exemple pour suivre le lien
-                });
-
-                deleteNo.addEventListener('click', function() {
-                    popupDelete.style.display = 'none'; // Cache la popup
+            $(document).ready(function () {
+                $('#index-videos').DataTable({
+                    responsive: true,
+                    pageLength: 10,
+                    lengthChange: false,
+                    layout: {
+                        bottomEnd: {
+                            paging: {
+                                numbers:false
+                            }
+                        }
+                    },
+                    language: {
+                        info: "_TOTAL_ entrée(s)",
+                        infoEmpty: "Aucune entrée",
+                        infoFiltered: ""
+                    },
+                    columnDefs: [
+                        { width: "90%", targets: 0 },
+                        { width: "10%", targets: 1 },
+                    ]
                 });
             });
         </script>
+
+
+        <script>
+            //MODALES
+            const isOpenClass = "modal-is-open";
+            const openingClass = "modal-is-opening";
+            const closingClass = "modal-is-closing";
+            const scrollbarWidthCssVar = "--pico-scrollbar-width";
+            const animationDuration = 400; // ms
+            let visibleModal = null;
+
+            // Toggle modal
+            const toggleModal = (event) => {
+                event.preventDefault();
+                const modal = document.getElementById(event.currentTarget.dataset.target);
+                if (!modal) return;
+                modal && (modal.open ? closeModal(modal) : openModal(modal));
+            };
+        </script>
+        <script src="{{ asset('js/pico/modal.js') }}"></script>
 
 
 

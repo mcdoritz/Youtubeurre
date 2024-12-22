@@ -20,11 +20,14 @@ class Media
     #[ORM\Column(length: 255)]
     private ?string $author = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $download_date = null;
 
-    #[ORM\Column(type: Types::TEXT)]
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $path = null;
+
+    #[ORM\ManyToOne(inversedBy: 'media')]
+    private ?MediaList $mediaList = null;
 
     public function getId(): ?int
     {
@@ -75,6 +78,18 @@ class Media
     public function setPath(string $path): static
     {
         $this->path = $path;
+
+        return $this;
+    }
+
+    public function getMediaList(): ?MediaList
+    {
+        return $this->mediaList;
+    }
+
+    public function setMediaList(?MediaList $mediaList): static
+    {
+        $this->mediaList = $mediaList;
 
         return $this;
     }

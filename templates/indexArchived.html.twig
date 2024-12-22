@@ -13,14 +13,11 @@
 {% block title %} {{ page_title }} {% endblock %}
 
 {% block body %}
-    <h3>Ajouter une chaine ou une playlist</h3>
-    <a href="{{ path('add.mediaList') }}" class="button add-button" role="button">Ajouter</a>
-    <hr>
     {% import '_index.twig' as table %}
-    <h3>Chaînes actives</h3>
+    <h3>Chaînes archivées</h3>
     {{ table.renderTable(channels, 'channels') }}
     <hr>
-    <h3>Playlists actives</h3>
+    <h3>Playlists archivées</h3>
     {{ table.renderTable(playLists, 'playlists') }}
 
 {% endblock %}

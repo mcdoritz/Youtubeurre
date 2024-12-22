@@ -32,6 +32,7 @@ class EditMediaListController extends AbstractController
 
         return $this->render('edit_mediaList.html.twig', [
             'controller_name' => 'EditMediaListController',
+            'id' => $mediaList->getId(),
             'form' => $form->createView(),
         ]);
     }

@@ -7,6 +7,7 @@ use App\Form\AddMediaListType;
 use App\Repository\MediaListRepository;
 use App\Service\FileManager;
 use App\Service\MediaListManager;
+use App\Service\MediaManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Filesystem\Filesystem;
@@ -19,7 +20,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class AddMediaListController extends AbstractController
 {
     #[Route('/add/mediaList', name: 'add.mediaList')]
-    public function add(Request $request, EntityManagerInterface $emi, MediaListManager $mediaListManager, FileManager $fileManager): Response
+    public function add(Request $request, EntityManagerInterface $emi, MediaListManager $mediaListManager, MediaManager $mediaManager): Response
     {
         $mediaList = new MediaList();
         $form = $this->createForm(AddMediaListType::class, $mediaList);
@@ -28,10 +29,15 @@ class AddMediaListController extends AbstractController
 
             $mediaListManager->configurePath($mediaList);
             $mediaListManager->getMediaListInfos($mediaList);
-            $mediaListManager->downloadMediaListInfos($mediaList);
 
+            $mediaListManager->downloadMediaListFiles($mediaList);
             $mediaListManager->copyPoster($mediaList);
+
             $mediaListManager->persistMediaList($mediaList);
+            $medias = $mediaManager->getMediaListVideoInfos($mediaList);
+            $mediaList->setTotalVideos(count($medias));
+            $mediaListManager->persistMediaList($mediaList);
+            $mediaManager->persistMedias($medias);
 
             // Ajouter un message flash
             $this->addFlash('success', 'La '.$mediaList->getType() == 0 ? 'playlist' : 'chaîne' .' a bien été ajoutée !');

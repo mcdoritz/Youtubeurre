@@ -9,13 +9,16 @@ use Symfony\Component\Filesystem\Filesystem;
 class MediaListManager {
     private ProcessExecutor $processExecutor;
     private FileManager $fileManager;
+    private MediaManager $videoManager;
+    private YTDLPManager $ytdlpManager;
 
     private EntityManagerInterface $entityManager;
 
-    public function __construct(ProcessExecutor $processExecutor, FileManager $fileManager, EntityManagerInterface $entityManager) {
+    public function __construct(ProcessExecutor $processExecutor, FileManager $fileManager, EntityManagerInterface $entityManager, YTDLPManager $ytdlpManager) {
         $this->processExecutor = $processExecutor;
         $this->fileManager = $fileManager;
         $this->entityManager = $entityManager;
+        $this->ytdlpManager = $ytdlpManager;
     }
 
     public function getMediaListInfos(MediaList $mediaList): void {
@@ -32,6 +35,7 @@ class MediaListManager {
                 '-O', '%(playlist_title)s'
             ];
 
+
         } else { // chaine
             $command = [
                 'yt-dlp',
@@ -42,10 +46,12 @@ class MediaListManager {
         }
 
         $output = $this->processExecutor->execute($command);
-        $mediaList->setTitle(trim($output));
+        $array = $this->ytdlpManager->trimResults($output, "none");
+        $mediaList->setTitle($array[0]);
+
     }
 
-    public function downloadMediaListInfos(MediaList $mediaList): void {
+    public function downloadMediaListFiles(MediaList $mediaList): void {
         $path = $this->fileManager->getAbsolutePath('data' . DIRECTORY_SEPARATOR . $mediaList->getPath());
         $title = $mediaList->getTitle();
         $url = $mediaList->getUrl();

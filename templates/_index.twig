@@ -1,0 +1,57 @@
+{% macro renderTable(items, type) %}
+    <table id="index-{{ type }}">
+        <thead>
+        <tr>
+            <th></th>
+            <th>Nom</th>
+            <th>URL</th>
+            <th>Cronjob</th>
+            <th>Age Max</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+            <tr>
+                <td>
+                    <a href="{{ path('show.mediaList', {id: item.id}) }}" class="table-link">
+                        <img src="{{ asset('downloaded/posters/' ~ item.title ~ '.jpg') }}"
+                             onerror="this.onerror=null; this.src='{{ asset('downloaded/default-poster.jpg') }}';"
+                             class="mediaList-poster"
+                             style="max-width: 100px;"
+                             alt="Poster de {{ item.title }}"/>
+                    </a>
+                </td>
+                <td><a href="{{ path('show.mediaList', {id: item.id}) }}" class="table-link">{{ item.title }}</a></td>
+                <td><a href="{{ path('show.mediaList', {id: item.id}) }}" class="table-link">{{ item.url }}</a></td>
+                <td><a href="{{ path('show.mediaList', {id: item.id}) }}" class="table-link">{{ item.cronjob }}</a></td>
+                <td>
+                    <a href="{{ path('show.mediaList', {id: item.id}) }}" class="table-link">
+                        {{ item.deleteAfter > 0 ? item.deleteAfter ~ ' jours' : 'Infini' }}
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <script>
+        $(document).ready(function () {
+            $('#index-{{ type }}').DataTable({
+                responsive: true,
+                pageLength: 10,
+                lengthChange: false,
+                language: {
+                    info: "_TOTAL_ entrée(s)",
+                    infoEmpty: "Aucune entrée",
+                    infoFiltered: ""
+                },
+                columnDefs: [
+                    { width: "5%", targets: 0 },
+                    { width: "20%", targets: 1 },
+                    { width: "55%%", targets: 2 },
+                    { width: "10%", targets: 3 },
+                    { width: "10%", targets: 4 }
+                ]
+            });
+        });
+    </script>
+{% endmacro %}

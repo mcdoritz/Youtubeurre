@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\MediaListRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -55,6 +57,17 @@ class MediaList
 
     #[ORM\Column(nullable: true)]
     private ?bool $lastUpdateResult = null;
+
+    /**
+     * @var Collection<int, Media>
+     */
+    #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'mediaList')]
+    private Collection $media;
+
+    public function __construct()
+    {
+        $this->media = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -225,6 +238,36 @@ class MediaList
     public function setLastUpdateResult(?bool $lastUpdateResult): static
     {
         $this->lastUpdateResult = $lastUpdateResult;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Media>
+     */
+    public function getMedia(): Collection
+    {
+        return $this->media;
+    }
+
+    public function addMedium(Media $medium): static
+    {
+        if (!$this->media->contains($medium)) {
+            $this->media->add($medium);
+            $medium->setMediaList($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMedium(Media $medium): static
+    {
+        if ($this->media->removeElement($medium)) {
+            // set the owning side to null (unless already changed)
+            if ($medium->getMediaList() === $this) {
+                $medium->setMediaList(null);
+            }
+        }
 
         return $this;
     }
