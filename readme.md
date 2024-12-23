@@ -25,3 +25,6 @@
     - Problème de certaines chaines à avoir une erreur nsig... titre de la playlist ne se récupère pas. ❌
       - Je récupère le titre de la playlist grâce à la première vidéo.. Or si celle ci renvoie une erreur,
       ça ne marche pas ! Donc trouver une autre idée ou passer à la vidéo suivante tant que ça renvoie des erreurs
+    - Gérer les cronjob => que ça permette de paramétrer des messages à date/heure précise pour lancer un scan
+    - Gérer le scan standalone (jusque là fait que lorsqu'on ajoute une medialist)
+    - Gérer le téléchargement
