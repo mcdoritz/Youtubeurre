@@ -38,6 +38,9 @@ class Media
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $scannedAt = null;
 
+    #[ORM\Column]
+    private ?bool $downloadable = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -135,6 +138,18 @@ class Media
     public function setScannedAt(?\DateTimeImmutable $scannedAt): static
     {
         $this->scannedAt = $scannedAt;
+
+        return $this;
+    }
+
+    public function isDownloadable(): ?bool
+    {
+        return $this->downloadable;
+    }
+
+    public function setDownloadable(bool $downloadable): static
+    {
+        $this->downloadable = $downloadable;
 
         return $this;
     }

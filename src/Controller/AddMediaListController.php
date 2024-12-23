@@ -39,9 +39,10 @@ class AddMediaListController extends AbstractController
             $mediaListManager->copyPoster($mediaList);
 
             // Récupérer les infos qu'on peut au début : titre des médias et id
-            $mediasIdAndTitle = $mediaManager->getMediasIdAndTitle($mediaList);
+            $mediasIdAndTitleAndVideoUploader = $mediaManager->getMediasIdAndTitleAndVideoUploader($mediaList);
+            //dd($mediasIdAndTitleAndVideoUploader);
             // Ajouter le nb de vidéos trouvées dans la médialiste
-            $totalMedias = count($mediasIdAndTitle);
+            $totalMedias = count($mediasIdAndTitleAndVideoUploader);
             $mediaList->setTotalMedias($totalMedias);
             $mediaList->setRemainingMessages($totalMedias);
 
@@ -50,7 +51,7 @@ class AddMediaListController extends AbstractController
             $mediaListId = $mediaList->getId();
 
             // Envoyer les médias pour traitement en arrière-plan
-            $messageBus->dispatch(new ProcessMediaMessage($mediasIdAndTitle, $mediaListId));
+            $messageBus->dispatch(new ProcessMediaMessage($mediasIdAndTitleAndVideoUploader, $mediaListId));
 
             // Ajouter un message flash
             $this->addFlash('success', 'La '.$mediaList->getType() == 0 ? 'playlist' : 'chaîne' .' a bien été ajoutée !');

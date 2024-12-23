@@ -24,7 +24,7 @@ class MediaManager
         $this->logger = $logger;
     }
 
-    public function getMediasIdAndTitle(MediaList $mediaList): array
+    public function getMediasIdAndTitleAndVideoUploader(MediaList $mediaList): array
     {
         $url = $mediaList->getUrl();
         $mediaList->setType(str_contains($url, 'https://www.youtube.com/@') ? 1 : 0);
@@ -34,7 +34,7 @@ class MediaManager
             $url,
             '--flat-playlist',
             '--lazy-playlist',
-            '-O', '%(id)s//%(title)s'
+            '-O', '%(id)s//%(title)s//%(uploader)s'
         ];
 
         $output = $this->processExecutor->execute($command);
@@ -69,27 +69,32 @@ class MediaManager
 
                     if (str_contains($outputDate, 'Sign in to confirm your age')) {
                         $this->logger->warning("Restriction d'âge détectée pour la vidéo ID $id.");
-                        $media[2] = (new \DateTimeImmutable())->format('Y-m-d'); // Date actuelle
+                        $media[3] = (new \DateTimeImmutable())->format('Y-m-d'); // Date actuelle
                         $media[1] = "[RESTRICTED] - " . ($media[1] ?? 'Titre inconnu');
+                        $newMedia->setDownloadable(false);
                     } elseif (str_contains($outputDate, 'ERROR:')) {
                         $this->logger->error("Erreur yt-dlp pour la vidéo ID $id : " . $outputDate);
-                        $media[2] = (new \DateTimeImmutable())->format('Y-m-d'); // Date actuelle
+                        $media[3] = (new \DateTimeImmutable())->format('Y-m-d'); // Date actuelle
                         $media[1] = "[ERRORED] - " . ($media[1] ?? 'Titre inconnu');
+                        $newMedia->setDownloadable(false);
                     } else {
-                        $media[2] = $this->ytdlpManager->trimResults($outputDate, "none")[0];
+                        $media[3] = $this->ytdlpManager->trimResults($outputDate, "none")[0];
+                        $newMedia->setDownloadable(true);
                     }
                 } catch (\Exception $e) {
                     // Gère toute exception inattendue
                     $this->logger->error("Exception critique pour la vidéo ID $id : " . $e->getMessage());
-                    $media[2] = (new \DateTimeImmutable())->format('Y-m-d'); // Date actuelle
+                    $media[3] = (new \DateTimeImmutable())->format('Y-m-d'); // Date actuelle
                     $media[1] = "[EXCEPTION] - " . ($media[1] ?? 'Titre inconnu');
+                    $newMedia->setDownloadable(false);
                 }
 
                 // Crée et persiste le média avec les données récupérées ou par défaut
                 $newMedia->setYoutubeId($media[0] ?? null);
                 $newMedia->setTitle($media[1] ?? 'Erreur');
-                $newMedia->setUploadDate(\DateTime::createFromFormat('Y-m-d', $media[2]) ?: new \DateTimeImmutable());
-                $newMedia->setAuthor($mediaListAuthor);
+                $newMedia->setUploadDate(\DateTime::createFromFormat('Y-m-d', $media[3]) ?: new \DateTimeImmutable());
+                $newMedia->setScannedAt(new \DateTimeImmutable());
+                $newMedia->setAuthor($media[2]);
                 $newMedia->setMediaList($mediaList);
 
                 if (!$this->persist1Media($newMedia)) {

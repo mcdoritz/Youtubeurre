@@ -46,6 +46,9 @@
                 </blockquote>
                 {% if mediaList.scanStatus == 'en cours' %}
                     <h4 aria-busy="true">Scan en cours</h4>
+                    <p>{{ mediaList.totalMedias - mediaList.remainingMessages }} / {{ mediaList.totalMedias }} vidéos</p>
+                    <progress value="{{ mediaList.totalMedias - mediaList.remainingMessages }}" max="{{ mediaList.totalMedias }}"></progress>
+                    <br>
                     <a href="{{ path('show.mediaList', {id: mediaList.id}) }}" role="button">
                         Actualiser la page
                     </a>
@@ -101,6 +104,7 @@
                 <table id="index-videos">
                     <thead>
                     <tr>
+                        <th></th>
                         <th>Titre</th>
                         <th>Upload</th>
                     </tr>
@@ -108,6 +112,7 @@
                     <tbody>
                     {% for media in medias %}
                         <tr>
+                            <td><div class="dot {{ media.downloadable ? 'pico-background-green-400' : 'pico-background-red-500' }}"></div></td>
                             <td><a href="{{ path('show.media', {id: media.id}) }}">{{ media.title }}</a></td>
                             <td><a href="{{ path('show.media', {id: media.id}) }}">{{ media.uploadDate|date('Y-m-d')|default('Inconnue') }}</a></td>
                         </tr>
@@ -169,7 +174,7 @@
                     responsive: true,
                     pageLength: 10,
                     lengthChange: false,
-                    order: [[1, 'desc']],
+                    order: [[2, 'desc']],
                     layout: {
                         bottomEnd: {
                             paging: {
@@ -183,8 +188,9 @@
                         infoFiltered: ""
                     },
                     columnDefs: [
-                        { width: "90%", targets: 0 },
-                        { width: "10%", targets: 1 },
+                        { width: "2%", targets: 0 },
+                        { width: "88%", targets: 1 },
+                        { width: "10%", targets: 2 },
                     ]
                 });
             });

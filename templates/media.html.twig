@@ -12,13 +12,17 @@
         <div class="grid">
 
             <article class="mediaList-poster-container">
-
-                {% if media.downloadDate is not empty %}
-                    {% set downloadColor = 'green-400' %}
-                    {% set downloadText = 'Téléchargée' %}
+                {% if media.downloadable %}
+                    {% if media.downloadDate is not empty %}
+                        {% set downloadColor = 'green-400' %}
+                        {% set downloadText = 'Téléchargée' %}
+                    {% else %}
+                        {% set downloadColor = 'amber-300' %}
+                        {% set downloadText = 'Non téléchargée' %}
+                    {% endif %}
                 {% else %}
-                    {% set downloadColor = 'amber-300' %}
-                    {% set downloadText = 'Non téléchargée' %}
+                    {% set downloadColor = 'red-500' %}
+                    {% set downloadText = 'Non téléchargeable' %}
                 {% endif %}
 
                 <blockquote class="pico-color-{{ downloadColor }}">
@@ -28,8 +32,8 @@
             <article>
                 <h3>Caractéristiques :</h3>
                 <ul class="carac-sett-list">
-                    <li>{{ media.mediaList.type == 0 ? 'Playlist' : 'Chaîne' }} : <a href="{{ media.mediaList.url }}" target="_blank">{{ media.author }}</a>&#8599;</li>
-                    <li>Auteur : AUTEUR</li>
+                    <li>{{ media.mediaList.type == 0 ? 'Playlist' : 'Chaîne' }} : <a href="{{ media.mediaList.url }}" target="_blank">{{ media.mediaList.title }}</a>&#8599;</li>
+                    <li>Auteur : {{ media.author }}</li>
                     <li>Chemin {{ media.path|default('inconnu') }}</li>
                     <li>Date d'ajout sur Youtube : {{ media.uploadDate|date('Y-m-d')|default('Inconnue') }}</li>
                 </ul>

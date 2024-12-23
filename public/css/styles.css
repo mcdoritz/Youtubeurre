@@ -109,6 +109,13 @@ div.dt-container div.dt-layout-row div.dt-layout-cell.dt-layout-end{
     align-items: center;
 }
 
+.dot{
+    border-radius: 50%;
+    width:15px;
+    height:15px;
+    margin:auto;
+}
+
 /* GENERAL, AUTRES */
 a{
     text-decoration: none;
