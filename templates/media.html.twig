@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+
+{% set page_title %} {{ media.title }}{% endset %}
+{% block title %} {{ title }}{% endblock %}
+
+{% block body %}
+
+    <h2>{{ media.title }}</h2>
+
+    {% if media is not empty %}
+
+        <div class="grid">
+
+            <article class="mediaList-poster-container">
+
+                {% if media.downloadDate is not empty %}
+                    {% set downloadColor = 'green-400' %}
+                    {% set downloadText = 'Téléchargée' %}
+                {% else %}
+                    {% set downloadColor = 'amber-300' %}
+                    {% set downloadText = 'Non téléchargée' %}
+                {% endif %}
+
+                <blockquote class="pico-color-{{ downloadColor }}">
+                    <b>{{ downloadText }} </b>
+                </blockquote>
+            </article>
+            <article>
+                <h3>Caractéristiques :</h3>
+                <ul class="carac-sett-list">
+                    <li>{{ media.mediaList.type == 0 ? 'Playlist' : 'Chaîne' }} : <a href="{{ media.mediaList.url }}" target="_blank">{{ media.author }}</a>&#8599;</li>
+                    <li>Auteur : AUTEUR</li>
+                    <li>Chemin {{ media.path|default('inconnu') }}</li>
+                    <li>Date d'ajout sur Youtube : {{ media.uploadDate|date('Y-m-d')|default('Inconnue') }}</li>
+                </ul>
+
+            </article>
+            <article>
+
+            </article>
+
+        </div>
+
+
+        <!-- --------------------------- Modales --------------------------- -->
+
+    {% else %}
+        <p>Vide</p>
+    {% endif %}
+
+{% endblock %}
