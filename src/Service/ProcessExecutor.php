@@ -7,17 +7,13 @@ use Symfony\Component\Process\Process;
 
 class ProcessExecutor {
 
-
-
-    public function execute(array $command): string {
+    public function execute(array $command): string
+    {
         $process = new Process($command);
         $process->run();
 
-        if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
-        }
-
-        return $process->getOutput();
+        // Retourne toujours la sortie, même si la commande échoue
+        return $process->isSuccessful() ? $process->getOutput() : $process->getErrorOutput();
     }
 
 }

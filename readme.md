@@ -15,3 +15,9 @@
     - Ajouter l'upload_date aux médias (marche pas directement avec la première commande yt-dlp)
     - Tri des médias par upload_date sur la page de la medialist
     - Gérer la suppression de la mediaList avec les médias
+- 23/12/2024
+  - DONE
+    - Ajouter l'upload_date aux médias (marche pas directement avec la première commande yt-dlp)
+    - Tri des médias par upload_date sur la page de la medialist
+    - Gérer la suppression de la mediaList avec les médias
+    - Gestion des erreurs de yt-dlp (deleted, restricted, unavailable) Quel cirque !

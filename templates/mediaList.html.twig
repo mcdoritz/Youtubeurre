@@ -44,16 +44,29 @@
                 <blockquote class="pico-color-{{ healthColor }}">
                     <b>{{ healthText }} HEALTH </b>
                 </blockquote>
+                {% if mediaList.scanStatus == 'en cours' %}
+                    <h4 aria-busy="true">Scan en cours</h4>
+                    <a href="{{ path('show.mediaList', {id: mediaList.id}) }}" role="button">
+                        Actualiser la page
+                    </a>
+                {% endif %}
             </article>
             <article>
                 <h3>Caractéristiques :</h3>
                 <ul class="carac-sett-list">
                     <li>Url : <a href="{{ mediaList.url }}" target="_blank">{{ mediaList.url }}</a>&#8599;</li>
-                    <li>Contient {{ mediaList.totalVideos }} vidéo{{ mediaList.totalVideos > 1 ? 's' : '' }}</li>
-                    <li>{{ mediaList.downloadedVideos }} vidéos ont été téléchargées</li>
+                    <li>Contient {{ mediaList.totalMedias }} vidéo{{ mediaList.totalMedias > 1 ? 's' : '' }}</li>
+                    <li>Dernier scan : <br>
+                        {% if mediaList.scanStatus == 'en cours' %}
+                            <strong>{{ mediaList.scanStatus }}</strong>
+                        {% else %}
+                            {{ mediaList.updatedAt is null ? 'Jamais fait' : 'Fait le ' ~ mediaList.updatedAt|date("j F Y à H\\hi") ~ resultText }}
+                        {% endif %}
+                    </li>
+                    <li style="margin-top:.5em">{{ mediaList.downloadedVideos }} vidéos ont été téléchargées</li>
                     <li>{{ mediaList.deletedVideos }} vidéos ont été supprimées</li>
-                    <li>Dernier scan : <br style="margin-bottom: .5em">
-                        {{ mediaList.updatedAt is null ? 'Jamais fait' : 'Fait le ' ~ mediaList.updatedAt|date("j F Y à H\\hi") ~ resultText }}
+                    <li>Dernier téléchargement : <br>
+                        Jamais fait.
                     </li>
                 </ul>
                 <h3>Réglages :</h3>
@@ -83,19 +96,20 @@
                 </a>
             </article>
             <article>
-                <h3>Liste des vidéos :</h3>
+                <h3>Liste des vidéos : {{ mediaList.scanStatus == 'en cours' ? '&nbsp<span aria-busy="true"></span><span style="font-size: .75em">&nbspScan en cours</span>' : '' }}</h3>
+
                 <table id="index-videos">
                     <thead>
                     <tr>
                         <th>Titre</th>
-                        <th>Date</th>
+                        <th>Upload</th>
                     </tr>
                     </thead>
                     <tbody>
                     {% for media in medias %}
                         <tr>
-                            <td><a href="#">{{ media.title }}</a></td>
-                            <td><a href="#">{{ media.download_date|default('Pas DL') }}</a></td>
+                            <td><a href="{{ path('show.media', {id: media.id}) }}">{{ media.title }}</a></td>
+                            <td><a href="{{ path('show.media', {id: media.id}) }}">{{ media.uploadDate|date('Y-m-d')|default('Inconnue') }}</a></td>
                         </tr>
                     {% endfor %}
                     </tbody>
@@ -155,6 +169,7 @@
                     responsive: true,
                     pageLength: 10,
                     lengthChange: false,
+                    order: [[1, 'desc']],
                     layout: {
                         bottomEnd: {
                             paging: {

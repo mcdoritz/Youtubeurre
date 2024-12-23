@@ -9,7 +9,6 @@ use Symfony\Component\Filesystem\Filesystem;
 class MediaListManager {
     private ProcessExecutor $processExecutor;
     private FileManager $fileManager;
-    private MediaManager $videoManager;
     private YTDLPManager $ytdlpManager;
 
     private EntityManagerInterface $entityManager;

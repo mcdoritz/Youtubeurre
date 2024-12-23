@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: MediaListRepository::class)]
 class MediaList
@@ -47,12 +48,24 @@ class MediaList
     private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(options: ['default' => 0])]
+    #[Assert\Range(
+        notInRangeMessage: 'La valeur totalVideos ne peut pas être inférieure à {{ min }}',
+        min: 0
+    )]
     private ?int $totalVideos = 0;
 
     #[ORM\Column(options: ['default' => 0])]
+    #[Assert\Range(
+        notInRangeMessage: 'La valeur de downloadedVideo ne peut pas être inférieure à {{ min }}',
+        min: 0
+    )]
     private ?int $downloadedVideos = 0;
 
     #[ORM\Column(options: ['default' => 0])]
+    #[Assert\Range(
+        notInRangeMessage: 'La valeur de deletedVideo ne peut pas être inférieure à {{ min }}',
+        min: 0
+    )]
     private ?int $deletedVideos = 0;
 
     #[ORM\Column(nullable: true)]
@@ -61,8 +74,18 @@ class MediaList
     /**
      * @var Collection<int, Media>
      */
-    #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'mediaList')]
+    #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'mediaList', cascade: ['remove'], orphanRemoval: true)]
     private Collection $media;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $scanStatus = "en cours";
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    #[Assert\Range(
+        notInRangeMessage: 'La valeur de remainingMessages ne peut pas être inférieure à {{ min }}',
+        min: 0
+    )]
+    private int $remainingMessages = 0;
 
     public function __construct()
     {
@@ -194,12 +217,12 @@ class MediaList
         return $this;
     }
 
-    public function getTotalVideos(): ?int
+    public function getTotalMedias(): ?int
     {
         return $this->totalVideos;
     }
 
-    public function setTotalVideos(?int $totalVideos): static
+    public function setTotalMedias(?int $totalVideos): static
     {
         $this->totalVideos = $totalVideos;
 
@@ -270,5 +293,37 @@ class MediaList
         }
 
         return $this;
+    }
+
+    public function getScanStatus(): ?string
+    {
+        return $this->scanStatus;
+    }
+
+    public function setScanStatus(string $scanStatus): static
+    {
+        $this->scanStatus = $scanStatus;
+
+        return $this;
+    }
+
+    public function setRemainingMessages(int $messages): void
+    {
+        $this->remainingMessages = $messages;
+    }
+
+    public function decrementRemainingMessages(): void
+    {
+        $this->remainingMessages--;
+    }
+
+    public function getRemainingMessages(): int
+    {
+        return $this->remainingMessages;
+    }
+
+    public function isScanComplete(): bool
+    {
+        return $this->remainingMessages === 0;
     }
 }

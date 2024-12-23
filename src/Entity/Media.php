@@ -21,13 +21,22 @@ class Media
     private ?string $author = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $download_date = null;
+    private ?\DateTimeInterface $downloadDate = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $path = null;
 
     #[ORM\ManyToOne(inversedBy: 'media')]
     private ?MediaList $mediaList = null;
+
+    #[ORM\Column(length: 255, unique: true, nullable: true)]
+    private ?string $youtubeId = null;
+
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $uploadDate = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $scannedAt = null;
 
     public function getId(): ?int
     {
@@ -60,12 +69,12 @@ class Media
 
     public function getDownloadDate(): ?\DateTimeInterface
     {
-        return $this->download_date;
+        return $this->downloadDate;
     }
 
-    public function setDownloadDate(\DateTimeInterface $download_date): static
+    public function setDownloadDate(\DateTimeInterface $downloadDate): static
     {
-        $this->download_date = $download_date;
+        $this->downloadDate = $downloadDate;
 
         return $this;
     }
@@ -90,6 +99,42 @@ class Media
     public function setMediaList(?MediaList $mediaList): static
     {
         $this->mediaList = $mediaList;
+
+        return $this;
+    }
+
+    public function getYoutubeId(): ?string
+    {
+        return $this->youtubeId;
+    }
+
+    public function setYoutubeId(?string $youtubeId): static
+    {
+        $this->youtubeId = $youtubeId;
+
+        return $this;
+    }
+
+    public function getUploadDate(): ?\DateTimeInterface
+    {
+        return $this->uploadDate;
+    }
+
+    public function setUploadDate(?\DateTimeInterface $uploadDate): static
+    {
+        $this->uploadDate = $uploadDate;
+
+        return $this;
+    }
+
+    public function getScannedAt(): ?\DateTimeImmutable
+    {
+        return $this->scannedAt;
+    }
+
+    public function setScannedAt(?\DateTimeImmutable $scannedAt): static
+    {
+        $this->scannedAt = $scannedAt;
 
         return $this;
     }
