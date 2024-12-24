@@ -7,6 +7,7 @@ use App\Repository\MediaListRepository;
 use App\Repository\MediaRepository;
 use App\Service\MediaListManager;
 use App\Service\MediaManager;
+use App\Service\YTDLPManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,16 +22,19 @@ class ScanMediaListController extends AbstractController
                           MediaRepository $mr,
                           MediaManager $mediaManager,
                           MediaListManager $mediaListManager,
+                          YTDLPManager $ytdlpManager,
                           MessageBusInterface $messageBus): Response
     {
         //Vérifier si un scan est déjà en cours...
         $mediaList = $mlr->findOneBy(['id' => $request->get('id')]);
         if($mediaList->getScanStatus() != "en cours"){
+            // Vérifier les màj de ytdlp
+            $ytdlpManager->updateYTDLP();
             $mediasAlreadyInDB = $mr->findBy(['mediaList' => $mediaList]);
 
             $mediasAlreadyinDBInfos = [];
             foreach($mediasAlreadyInDB as $media){
-                $mediasAlreadyInDBInfos[] = [$media->getYoutubeId(), $media->getTitle(), $media->getAuthor()];
+                $mediasAlreadyinDBInfos[] = [$media->getYoutubeId(), $media->getTitle(), $media->getAuthor()];
             }
 
             // Récupérer les infos de la médialist
@@ -38,12 +42,13 @@ class ScanMediaListController extends AbstractController
             $mediasToScan = [];
 
             // Supprimer les éléments de $array2 qui sont présents dans $array1
-            $mediasToScan = array_udiff($mediasOnYoutube, $mediasAlreadyInDBInfos, function ($a, $b) {
+            $mediasToScan = array_udiff($mediasOnYoutube, $mediasAlreadyinDBInfos, function ($a, $b) {
                 // Comparaison stricte des sous-tableaux
                 return $a === $b ? 0 : -1; // Retourne 0 si égaux, -1 si différents
             });
 
             $countMediasToScan = count($mediasToScan);
+            //dd($mediaList, $countMediasToScan, $mediasAlreadyInDB, $mediasAlreadyinDBInfos, $mediasOnYoutube, $mediasToScan);
 
             if ($countMediasToScan != 0){
                 // Envoyer les médias pour traitement en arrière-plan

@@ -31,7 +31,9 @@ class MediaManager
     public function getMediasInfos(MediaList $mediaList, array $whatToGet): array
     {
         $url = $mediaList->getUrl();
-        $mediaList->setType(str_contains($url, 'https://www.youtube.com/@') ? 1 : 0);
+        $channel = str_contains($url, 'https://www.youtube.com/@');
+        $mediaList->setType($channel ? 1 : 0);
+        $title = $mediaList->getTitle();
 
         $items = "";
         foreach ($whatToGet as $item) {
@@ -53,6 +55,7 @@ class MediaManager
         $output = $this->processExecutor->execute($command);
 
         $medias = $this->ytdlpManager->trimResults($output, "\n");
+
         $mediasTrimed = [];
         foreach ($medias as $mediaString) {
             $titleToCheck = "//".substr($mediaString, 0, strpos($mediaString, "//"));
@@ -64,6 +67,13 @@ class MediaManager
 
         }
 
+        // Vérifier que le titre de la playlist/chaine n'est pas NA
+        foreach ($mediasTrimed as $key => $mediaString) {
+            if($mediaString[2] == "NA"){
+                $mediaString[2] = $title;
+            }
+            $mediasTrimed[$key] = $mediaString;
+        }
         return $mediasTrimed;
     }
 
@@ -75,7 +85,7 @@ class MediaManager
      */
     public function getAllMediasInfos(MediaList $mediaList, array $medias): MediaList
     {
-        $mediaListAuthor = $mediaList->getTitle();
+
         foreach ($medias as $key => $media) {
             $id = $media[0];
 
@@ -110,6 +120,9 @@ class MediaManager
                     $media[3] = (new \DateTimeImmutable())->format('Y-m-d'); // Date actuelle
                     $media[1] = "[EXCEPTION] - " . ($media[1] ?? 'Titre inconnu');
 
+                }
+                if($media[2] == "NA"){
+                    $media[2] = $mediaList->getTitle();// SI la mediaList est une chaîne, alors il faut donner le nom de l'uploader selon le titre;
                 }
 
                 // Crée et persiste le média avec les données récupérées ou par défaut

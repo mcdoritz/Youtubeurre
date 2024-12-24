@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello AboutController!{% endblock %}
+
+{% block body %}
+    <h3>A propos</h3>
+    <div class="grid">
+        <article>
+            <h4>Version de ytdlp</h4>
+            {{ ytdlp.version|default('inconnue') }}<br style="margin-bottom: 1em">
+            <a href="{{ path('ytdlp.update') }}" role="button">
+                Mettre à jour
+            </a>
+        </article>
+        <article>
+            <h4>Chaines et playlists scannées</h4>
+            {{ mediaListsCount }}
+        </article>
+        <article>
+            <h4>Vidéos scannées</h4>
+            {{ mediasCount }}
+        </article>
+    </div>
+    <article>
+        <h2><a href="https://floriandorizon.fr" target="_blank">Dorizon Industries&#8599;</a></h2>
+    </article>
+
+{% endblock %}

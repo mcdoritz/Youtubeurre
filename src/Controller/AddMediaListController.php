@@ -5,8 +5,10 @@ namespace App\Controller;
 use App\Entity\MediaList;
 use App\Form\AddMediaListType;
 use App\Message\ProcessMediaMessage;
+use App\Repository\YtdlpRepository;
 use App\Service\MediaListManager;
 use App\Service\MediaManager;
+use App\Service\YTDLPManager;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,7 +22,8 @@ class AddMediaListController extends AbstractController
         Request $request,
         MediaListManager $mediaListManager,
         MediaManager $mediaManager,
-        MessageBusInterface $messageBus
+        MessageBusInterface $messageBus,
+        YTDLPManager $ytdlpManager
     ): Response
     {
         $mediaList = new MediaList();
@@ -28,6 +31,8 @@ class AddMediaListController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // Vérifier les màj de ytdlp
+            $ytdlpManager->updateYTDLP();
             // Configurer les dossiers
             $mediaListManager->configurePath($mediaList);
 
@@ -40,6 +45,7 @@ class AddMediaListController extends AbstractController
 
             // Récupérer les infos qu'on peut au début : titre des médias et id
             $mediasIdAndTitleAndVideoUploader = $mediaManager->getMediasInfos($mediaList, ['%(id)s', '%(title)s', '%(uploader)s']);
+
             // Ajouter le nb de vidéos trouvées dans la médialiste
             $totalMedias = count($mediasIdAndTitleAndVideoUploader);
             $mediaList->setTotalMedias($totalMedias);
