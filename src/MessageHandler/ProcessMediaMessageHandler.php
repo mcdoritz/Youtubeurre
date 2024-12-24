@@ -25,6 +25,7 @@ class ProcessMediaMessageHandler
 
     public function __invoke(ProcessMediaMessage $message)
     {
+
         // Récupérer la MediaList à partir de son ID
         $mediaList = $this->mediaListRepository->find($message->getMediaListId());
 
@@ -41,7 +42,7 @@ class ProcessMediaMessageHandler
                 $mediaList->setScanStatus('terminé');
                 $mediaList->setUpdatedAt(new \DateTimeImmutable());
                 $mediaList->setLastUpdateResult(true);
-
+                $mediaList->setTotalMedias(count($mediaList->getMedia()));
                 $this->mediaListManager->persistMediaList($mediaList);
             }
         } else{

@@ -82,7 +82,7 @@
                     <li>Qualité : {{ mediaList.quality > 0 ? mediaList.quality ~ '/3' : 'Audio seulement' }}</li>
                     <li>Chemin de téléchargement : {{ mediaList.path }}</li>
                 </ul>
-                <a href="#" role="button">
+                <a href="{{ path('scan.mediaList', {id: mediaList.id}) }}" role="button">
                     Scanner
                 </a>
                 <a href="{{ path('edit.mediaList', {id: mediaList.id}) }}" role="button">

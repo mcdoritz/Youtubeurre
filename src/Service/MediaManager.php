@@ -24,35 +24,58 @@ class MediaManager
         $this->logger = $logger;
     }
 
-    public function getMediasIdAndTitleAndVideoUploader(MediaList $mediaList): array
+    /*
+     * Permet de récupérer l'id, le titre, l'auteur des vidéos
+     * %(id)s , %(title)s, %(uploader)s
+     */
+    public function getMediasInfos(MediaList $mediaList, array $whatToGet): array
     {
         $url = $mediaList->getUrl();
         $mediaList->setType(str_contains($url, 'https://www.youtube.com/@') ? 1 : 0);
 
+        $items = "";
+        foreach ($whatToGet as $item) {
+            $items .= $item . '//';
+        }
+
+        $items = substr($items, 0, strlen($items) -2);
+
+        // Note : dans la commande, il faut toujours qu'on indique le titre afin de détecter les vidéos unavailable
+        // On met le titre au début comme ça on sait toujours ce qu'on a à enlever
         $command = [
             'yt-dlp',
             $url,
             '--flat-playlist',
             '--lazy-playlist',
-            '-O', '%(id)s//%(title)s//%(uploader)s'
+            '-O', '%(title)s//' . $items
         ];
 
         $output = $this->processExecutor->execute($command);
+
         $medias = $this->ytdlpManager->trimResults($output, "\n");
         $mediasTrimed = [];
-        foreach ($medias as $media) {
-            if ($this->checkUnavailableMedias($media)) {
+        foreach ($medias as $mediaString) {
+            $titleToCheck = "//".substr($mediaString, 0, strpos($mediaString, "//"));
+            $media = substr($mediaString, strpos($mediaString, "//") + 2);
+
+            if ($this->checkUnavailableMedias($titleToCheck)) {
                 $mediasTrimed[] = $this->ytdlpManager->trimResults($media, "//");
             }
+
         }
 
         return $mediasTrimed;
     }
 
+    /*
+     * $medias est un tableau[string]avec
+     * $media[0] : id youtube
+     * $media[1] : titre de la vidéo
+     * $media[2] : auteur de la vidéo
+     */
     public function getAllMediasInfos(MediaList $mediaList, array $medias): MediaList
     {
         $mediaListAuthor = $mediaList->getTitle();
-
         foreach ($medias as $key => $media) {
             $id = $media[0];
 
@@ -63,7 +86,7 @@ class MediaManager
                     "https://www.youtube.com/watch?v=$id",
                     '-O', '%(upload_date>%Y-%m-%d)s'
                 ];
-
+                $downloadable = false;
                 try {
                     $outputDate = $this->processExecutor->execute($commandDate);
 
@@ -71,25 +94,26 @@ class MediaManager
                         $this->logger->warning("Restriction d'âge détectée pour la vidéo ID $id.");
                         $media[3] = (new \DateTimeImmutable())->format('Y-m-d'); // Date actuelle
                         $media[1] = "[RESTRICTED] - " . ($media[1] ?? 'Titre inconnu');
-                        $newMedia->setDownloadable(false);
+
                     } elseif (str_contains($outputDate, 'ERROR:')) {
                         $this->logger->error("Erreur yt-dlp pour la vidéo ID $id : " . $outputDate);
                         $media[3] = (new \DateTimeImmutable())->format('Y-m-d'); // Date actuelle
                         $media[1] = "[ERRORED] - " . ($media[1] ?? 'Titre inconnu');
-                        $newMedia->setDownloadable(false);
+
                     } else {
                         $media[3] = $this->ytdlpManager->trimResults($outputDate, "none")[0];
-                        $newMedia->setDownloadable(true);
+                        $downloadable = true;
                     }
                 } catch (\Exception $e) {
                     // Gère toute exception inattendue
                     $this->logger->error("Exception critique pour la vidéo ID $id : " . $e->getMessage());
                     $media[3] = (new \DateTimeImmutable())->format('Y-m-d'); // Date actuelle
                     $media[1] = "[EXCEPTION] - " . ($media[1] ?? 'Titre inconnu');
-                    $newMedia->setDownloadable(false);
+
                 }
 
                 // Crée et persiste le média avec les données récupérées ou par défaut
+                $newMedia->setDownloadable($downloadable);
                 $newMedia->setYoutubeId($media[0] ?? null);
                 $newMedia->setTitle($media[1] ?? 'Erreur');
                 $newMedia->setUploadDate(\DateTime::createFromFormat('Y-m-d', $media[3]) ?: new \DateTimeImmutable());
