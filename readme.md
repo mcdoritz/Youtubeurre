@@ -28,3 +28,6 @@
     - Gérer les cronjob => que ça permette de paramétrer des messages à date/heure précise pour lancer un scan
     - Gérer le scan standalone (jusque là fait que lorsqu'on ajoute une medialist)
     - Gérer le téléchargement
+  - 24/12/2024
+    - Erreur nsig : changé le renvoi de ProcessExecutor->execute qui ne renvoyait que l'erreur en cas d'erreur
+    - 
