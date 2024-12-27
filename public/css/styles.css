@@ -116,6 +116,54 @@ div.dt-container div.dt-layout-row div.dt-layout-cell.dt-layout-end{
     margin:auto;
 }
 
+/* FLASH MESSAGES */
+
+.flash-container {
+    height:1.5em;
+}
+
+.alert {
+    height:100%;
+    padding: 0.1em;
+    border-radius: 5px;
+}
+
+.alert-container{
+    height:1.25em;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Animation pour masquer les messages */
+@keyframes fadeOut {
+    0% {
+        opacity: 1; /* Début visible */
+    }
+    50% {
+        opacity: 1; /* Reste visible jusqu'à 90% */
+    }
+    100% {
+        opacity: 0; /* Invisible à la fin */
+    }
+}
+
+.flash-message {
+    animation: fadeOut 6s forwards; /* Durée totale de 6 secondes */
+    animation-delay: 0s; /* Aucun délai au début */
+    transition: opacity 1s ease; /* Assure une transition douce */
+}
+
+
+/*************************************/
+
 /* GENERAL, AUTRES */
 a{
     text-decoration: none;

@@ -91,7 +91,8 @@ class ScanMediaListController extends AbstractController
 
                     $mediaManager->removeMedias($mediasToScan);
                     //dd($mediaList, $countMediasToScan, $mediasAlreadyInDB, $mediasAlreadyinDBInfos, $mediasOnYoutube, $mediasToScan);
-                    $this->addFlash('success', 'Une ou des vidéos ont été supprimées... scan en cours');
+                    $s = $mediasToScan > 1 ? 's' : '';
+                    $this->addFlash('success', $countMediasToScan . ' vidéo'. $s . ' ont été supprimée' . $s .' !');
                 }
 
             } else{

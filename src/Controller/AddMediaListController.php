@@ -48,6 +48,7 @@ class AddMediaListController extends AbstractController
 
             // Ajouter le nb de vidéos trouvées dans la médialiste
             $totalMedias = count($mediasIdAndTitleAndVideoUploader);
+
             $mediaList->setTotalMedias($totalMedias);
             $mediaList->setRemainingMessages($totalMedias);
 

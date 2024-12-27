@@ -17,10 +17,14 @@ class MediaListController extends AbstractController
     {
         $mediaList = $mlr->find($id);
         $medias = $mediaList->getMedia();
-        if(count($medias) != $mediaList->getTotalMedias()){
-            $mediaList->setTotalMedias(count($medias));
-            $mediaListManager->persistMediaList($mediaList);
+        //dd(count($medias), $mediaList->getTotalMedias());
+        if($mediaList->getScanStatus() != "en cours"){
+            if(count($medias) != $mediaList->getTotalMedias()){
+                $mediaList->setTotalMedias(count($medias));
+                $mediaListManager->persistMediaList($mediaList);
+            }
         }
+
         //dd($mediaList, $medias);
         return $this->render('mediaList.html.twig', [
             'controller_name' => 'MediaListController',
