@@ -34,3 +34,6 @@
     - Scan pour l'ajout des vidéos OK !
   - TO DO
     - Scan pour la suppression de vidéo ?
+- 27/12/2024
+  - Scan de vidéo : si vidéo supplémentaire, ne pas tout rescanner, juste les x dernières
+  - Scan de vidéo : si vidéo en moins, tout rescanner

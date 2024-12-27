@@ -39,24 +39,61 @@ class ScanMediaListController extends AbstractController
 
             // Récupérer les infos de la médialist
             $mediasOnYoutube = $mediaManager->getMediasInfos($mediaList, ['%(id)s', '%(title)s', '%(uploader)s']);
-            $mediasToScan = [];
 
-            // Supprimer les éléments de $array2 qui sont présents dans $array1
-            $mediasToScan = array_udiff($mediasOnYoutube, $mediasAlreadyinDBInfos, function ($a, $b) {
-                // Comparaison stricte des sous-tableaux
-                return $a === $b ? 0 : -1; // Retourne 0 si égaux, -1 si différents
-            });
+            // Extraction des youtube id dans les 2 tableaux pour comparaison
+            $keysOnYoutube = array_map(function ($media) {
+                return $media[0]; // Le premier élément du sous-tableau
+            }, $mediasOnYoutube);
 
-            $countMediasToScan = count($mediasToScan);
-            //dd($mediaList, $countMediasToScan, $mediasAlreadyInDB, $mediasAlreadyinDBInfos, $mediasOnYoutube, $mediasToScan);
+            $keysAlreadyInDB = array_map(function ($media) {
+                return $media[0];
+            }, $mediasAlreadyinDBInfos);
+
+            // Calcul des différences sur base des youtube id
+            $youtubeIdToScan = array_diff($keysOnYoutube, $keysAlreadyInDB);
+
+            $countYoutubeMedias = count($mediasOnYoutube);
+            $countMediasAlreadyInDB = count($mediasAlreadyInDB);
+            $countMediasToScan = $countYoutubeMedias - $countMediasAlreadyInDB;
 
             if ($countMediasToScan != 0){
-                // Envoyer les médias pour traitement en arrière-plan
-                $mediaList->setScanStatus('en cours');
-                $mediaList->setTotalMedias($countMediasToScan);
-                $mediaList->setRemainingMessages($countMediasToScan);
-                $mediaListManager->persistMediaList($mediaList);
-                $messageBus->dispatch(new ProcessMediaMessage($mediasToScan, $mediaList->getId()));
+
+                // Faire ressortir d'abord les vidéos différentes
+                // Filtrer les sous-tableaux du second tableau
+                $mediasToScan = array_filter($mediasOnYoutube, function ($subArray) use ($youtubeIdToScan) {
+                    return in_array($subArray[0], $youtubeIdToScan);
+                });
+
+                // Ré-indexer le tableau (facultatif)
+                $mediasToScan = array_values($mediasToScan);
+
+                // S'il y a + de vidéos sur youtube que dans la bdd, alors on ajoute les vidéos
+                if(count($mediasAlreadyInDB) < count($mediasOnYoutube)){
+                    // Envoyer les médias pour traitement en arrière-plan
+                    $mediaList->setScanStatus('en cours');
+                    $mediaList->setTotalMedias($countYoutubeMedias);
+                    $mediaList->setRemainingMessages($countMediasToScan);
+                    $mediaListManager->persistMediaList($mediaList);
+                    $messageBus->dispatch(new ProcessMediaMessage($mediasToScan, $mediaList->getId()));
+                    $this->addFlash('success', 'Une ou des vidéos ont été ajoutées... scan en cours');
+                } else { //Sinon on les suppr
+                    // Extraction des clés [0] pour comparaison
+                    $YoutubeIdmediasOnYoutube = array_map(function ($subArray) {
+                        return $subArray[0];
+                    }, $mediasOnYoutube);
+
+                    $mediasToScan = array_filter(array_map(function ($subArray) {
+                        return $subArray[0];
+                    }, $mediasAlreadyinDBInfos), function ($key) use ($YoutubeIdmediasOnYoutube) {
+                        return !in_array($key, $YoutubeIdmediasOnYoutube);
+                    });
+                    //dd($mediasAlreadyinDBInfos, $YoutubeIdmediasOnYoutube, $mediasToScan);
+
+                    $mediaManager->removeMedias($mediasToScan);
+                    //dd($mediaList, $countMediasToScan, $mediasAlreadyInDB, $mediasAlreadyinDBInfos, $mediasOnYoutube, $mediasToScan);
+                    $this->addFlash('success', 'Une ou des vidéos ont été supprimées... scan en cours');
+                }
+
             } else{
                 $this->addFlash('success', 'Aucune nouvelle vidéo');
             }

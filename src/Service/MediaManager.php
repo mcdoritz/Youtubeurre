@@ -188,6 +188,51 @@ class MediaManager
 
     }
 
+    public function remove1Media(Media $media): bool
+    {
+
+        $existingMedia = $this->entityManager->getRepository(Media::class)
+            ->findOneBy(['youtubeId' => $media->getYoutubeId()]);
+
+        if ($existingMedia) {
+            $this->entityManager->remove($media);
+            $this->entityManager->flush();
+            $this->logger->info("Persistance : Média supprimé avec l'ID YouTube : " . $media->getYoutubeId());
+            return true;
+        }
+        $this->logger->info("Persistance : à supprimer NON TROUVE avec l'ID YouTube : " . $media->getYoutubeId());
+
+        return false;
+
+    }
+
+    /*
+     * Attention, ici les $medias ne sont que sous la forme d'un tableau de youtube id (string) :
+     * 0 : youtube id
+     */
+    public function removeMedias(array $medias): bool
+    {
+        $no_error = true;
+        foreach ($medias as $youtubeId) {
+            $mediaToDelete = $this->entityManager->getRepository(Media::class)
+                ->findOneBy(['youtubeId' => $youtubeId]);
+
+            if ($mediaToDelete) {
+                $this->entityManager->remove($mediaToDelete);
+                $this->entityManager->flush();
+                $this->logger->info("Persistance : Média supprimé avec l'ID YouTube : " . $mediaToDelete->getYoutubeId());
+
+            }
+            $this->logger->info("Persistance : à supprimer NON TROUVE avec l'ID YouTube : " . $mediaToDelete->getYoutubeId());
+            $no_error = false;
+
+        }
+
+        return $no_error;
+
+    }
+
+
     public function checkUnavailableMedias(string $media): bool {
         if(!str_contains($media, "//[Deleted video]") && !str_contains($media, "//[Private video]") && !str_contains($media, "//[Unavailable video]") && !str_contains($media, "//[Blocked video]")){
             return true;
