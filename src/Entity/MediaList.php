@@ -309,7 +309,11 @@ class MediaList
 
     public function setRemainingMessages(int $messages): void
     {
-        $this->remainingMessages = $messages;
+        if($messages > 0) {
+            $this->remainingMessages = $messages;
+        } else {
+            $this->remainingMessages = 0;
+        }
     }
 
     public function decrementRemainingMessages(): void

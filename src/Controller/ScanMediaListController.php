@@ -53,7 +53,7 @@ class ScanMediaListController extends AbstractController
             if ($countMediasToScan != 0){
                 // Envoyer les médias pour traitement en arrière-plan
                 $mediaList->setScanStatus('en cours');
-                $mediaList->setTotalMedias($mediaList->getTotalMedias() + $countMediasToScan);
+                $mediaList->setTotalMedias($countMediasToScan);
                 $mediaList->setRemainingMessages($countMediasToScan);
                 $mediaListManager->persistMediaList($mediaList);
                 $messageBus->dispatch(new ProcessMediaMessage($mediasToScan, $mediaList->getId()));

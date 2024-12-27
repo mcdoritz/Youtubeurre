@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\Media;
 use App\Entity\MediaList;
+use App\Repository\MediaRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
@@ -15,13 +16,20 @@ class MediaManager
     private YTDLPManager $ytdlpManager;
     private MediaListManager $mediaListManager;
     private LoggerInterface $logger;
+    private MediaRepository $mediaRepository;
 
-    public function __construct(ProcessExecutor $processExecutor, EntityManagerInterface $entityManager, YTDLPManager $ytdlpManager, MediaListManager $mediaListManager, LoggerInterface $logger) {
+    public function __construct(ProcessExecutor $processExecutor,
+                                EntityManagerInterface $entityManager,
+                                YTDLPManager $ytdlpManager,
+                                MediaListManager $mediaListManager,
+                                LoggerInterface $logger,
+                                MediaRepository $mediaRepository,) {
         $this->processExecutor = $processExecutor;
         $this->entityManager = $entityManager;
         $this->ytdlpManager = $ytdlpManager;
         $this->mediaListManager = $mediaListManager;
         $this->logger = $logger;
+        $this->mediaRepository = $mediaRepository;
     }
 
     /*
@@ -90,57 +98,63 @@ class MediaManager
             $id = $media[0];
 
             if (!empty($id)) {
-                $newMedia = new Media();
-                $commandDate = [
-                    'yt-dlp',
-                    "https://www.youtube.com/watch?v=$id",
-                    '-O', '%(upload_date>%Y-%m-%d)s'
-                ];
-                $downloadable = false;
-                try {
-                    $outputDate = $this->processExecutor->execute($commandDate);
+                // Vérifier d'abord que le média n'existe pas déjà dans la bdd
+                if(!$this->mediaRepository->findOneBy(['id' => $id])) {
+                    $newMedia = new Media();
+                    $commandDate = [
+                        'yt-dlp',
+                        "https://www.youtube.com/watch?v=$id",
+                        '-O', '%(upload_date>%Y-%m-%d)s'
+                    ];
+                    $downloadable = false;
+                    try {
+                        $outputDate = $this->processExecutor->execute($commandDate);
 
-                    if (str_contains($outputDate, 'Sign in to confirm your age')) {
-                        $this->logger->warning("Restriction d'âge détectée pour la vidéo ID $id.");
+                        if (str_contains($outputDate, 'Sign in to confirm your age')) {
+                            $this->logger->warning("Restriction d'âge détectée pour la vidéo ID $id.");
+                            $media[3] = (new \DateTimeImmutable())->format('Y-m-d'); // Date actuelle
+                            $media[1] = "[RESTRICTED] - " . ($media[1] ?? 'Titre inconnu');
+
+                        } elseif (str_contains($outputDate, 'ERROR:')) {
+                            $this->logger->error("Erreur yt-dlp pour la vidéo ID $id : " . $outputDate);
+                            $media[3] = (new \DateTimeImmutable())->format('Y-m-d'); // Date actuelle
+                            $media[1] = "[ERRORED] - " . ($media[1] ?? 'Titre inconnu');
+
+                        } else {
+                            $media[3] = $this->ytdlpManager->trimResults($outputDate, "none")[0];
+                            $downloadable = true;
+                        }
+                    } catch (\Exception $e) {
+                        // Gère toute exception inattendue
+                        $this->logger->error("Exception critique pour la vidéo ID $id : " . $e->getMessage());
                         $media[3] = (new \DateTimeImmutable())->format('Y-m-d'); // Date actuelle
-                        $media[1] = "[RESTRICTED] - " . ($media[1] ?? 'Titre inconnu');
+                        $media[1] = "[EXCEPTION] - " . ($media[1] ?? 'Titre inconnu');
 
-                    } elseif (str_contains($outputDate, 'ERROR:')) {
-                        $this->logger->error("Erreur yt-dlp pour la vidéo ID $id : " . $outputDate);
-                        $media[3] = (new \DateTimeImmutable())->format('Y-m-d'); // Date actuelle
-                        $media[1] = "[ERRORED] - " . ($media[1] ?? 'Titre inconnu');
-
-                    } else {
-                        $media[3] = $this->ytdlpManager->trimResults($outputDate, "none")[0];
-                        $downloadable = true;
                     }
-                } catch (\Exception $e) {
-                    // Gère toute exception inattendue
-                    $this->logger->error("Exception critique pour la vidéo ID $id : " . $e->getMessage());
-                    $media[3] = (new \DateTimeImmutable())->format('Y-m-d'); // Date actuelle
-                    $media[1] = "[EXCEPTION] - " . ($media[1] ?? 'Titre inconnu');
+                    if($media[2] == "NA"){
+                        $media[2] = $mediaList->getTitle();// SI la mediaList est une chaîne, alors il faut donner le nom de l'uploader selon le titre;
+                    }
 
+                    // Crée et persiste le média avec les données récupérées ou par défaut
+                    $newMedia->setDownloadable($downloadable);
+                    $newMedia->setYoutubeId($media[0] ?? null);
+                    $newMedia->setTitle($media[1] ?? 'Erreur');
+                    $newMedia->setUploadDate(\DateTime::createFromFormat('Y-m-d', $media[3]) ?: new \DateTimeImmutable());
+                    $newMedia->setScannedAt(new \DateTimeImmutable());
+                    $newMedia->setAuthor($media[2]);
+                    $newMedia->setMediaList($mediaList);
+
+                    if ($this->persist1Media($newMedia)) {
+                        $this->logger->info("Média persisté avec l'ID YouTube : " . $newMedia->getYoutubeId() . ", il reste " . $mediaList->getRemainingMessages() . " vidéos");
+                    }
+                    // Décrémente le compteur pour cette vidéo, même en cas d'erreur
+                    $mediaList->decrementRemainingMessages();
+                    $this->mediaListManager->persistMediaList($mediaList);
+                } else {
+                    // On ne décrémente pas le compteur
+                    $this->logger->info("Vérification de la présence du média en bdd : déjà existant avec l'ID YouTube : " . $media->getYoutubeId());
                 }
-                if($media[2] == "NA"){
-                    $media[2] = $mediaList->getTitle();// SI la mediaList est une chaîne, alors il faut donner le nom de l'uploader selon le titre;
-                }
 
-                // Crée et persiste le média avec les données récupérées ou par défaut
-                $newMedia->setDownloadable($downloadable);
-                $newMedia->setYoutubeId($media[0] ?? null);
-                $newMedia->setTitle($media[1] ?? 'Erreur');
-                $newMedia->setUploadDate(\DateTime::createFromFormat('Y-m-d', $media[3]) ?: new \DateTimeImmutable());
-                $newMedia->setScannedAt(new \DateTimeImmutable());
-                $newMedia->setAuthor($media[2]);
-                $newMedia->setMediaList($mediaList);
-
-                if (!$this->persist1Media($newMedia)) {
-                    $mediaList->setScanStatus("Erreur");
-                }
-
-                // Décrémente le compteur pour cette vidéo, même en cas d'erreur
-                $mediaList->decrementRemainingMessages();
-                $this->mediaListManager->persistMediaList($mediaList);
             }
         }
 
@@ -163,7 +177,7 @@ class MediaManager
             ->findOneBy(['youtubeId' => $media->getYoutubeId()]);
 
         if ($existingMedia) {
-            $this->logger->info("Média déjà existant avec l'ID YouTube : " . $media->getYoutubeId());
+            $this->logger->info("Persistance : Média déjà existant avec l'ID YouTube : " . $media->getYoutubeId());
             return false; // Ignore les doublons
         }
 

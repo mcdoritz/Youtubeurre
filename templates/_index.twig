@@ -3,6 +3,7 @@
         <thead>
         <tr>
             <th></th>
+            <th></th>
             <th>Nom</th>
             <th>URL</th>
             <th>Cronjob</th>
@@ -20,6 +21,20 @@
                              style="max-width: 100px;"
                              alt="Poster de {{ item.title }}"/>
                     </a>
+                </td>
+                <td>
+                    {% if item.scanStatus == 'en cours'%}
+                        <div aria-busy="true"></div>
+                    {% else %}
+                        {% if item.lastUpdateResult is same as(true) %}
+                            {% set healthColor = 'green-400' %}
+                        {% elseif item.lastUpdateResult is same as(false) %}
+                            {% set healthColor = 'red-400' %}
+                        {% elseif item.lastUpdateResult is null %}
+                            {% set healthColor = 'amber-300' %}
+                        {% endif %}
+                        <div class="dot pico-background-{{ healthColor }}"></div>
+                    {% endif %}
                 </td>
                 <td><a href="{{ path('show.mediaList', {id: item.id}) }}" class="table-link">{{ item.title }}</a></td>
                 <td><a href="{{ path('show.mediaList', {id: item.id}) }}" class="table-link">{{ item.url }}</a></td>
@@ -46,10 +61,11 @@
                 },
                 columnDefs: [
                     { width: "5%", targets: 0 },
-                    { width: "20%", targets: 1 },
-                    { width: "55%%", targets: 2 },
-                    { width: "10%", targets: 3 },
-                    { width: "10%", targets: 4 }
+                    { width: "2%", targets: 1 },
+                    { width: "20%", targets: 2 },
+                    { width: "55%%", targets: 3 },
+                    { width: "7%", targets: 4 },
+                    { width: "7%", targets: 5 }
                 ]
             });
         });
