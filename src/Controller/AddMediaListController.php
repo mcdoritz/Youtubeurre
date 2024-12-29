@@ -44,7 +44,7 @@ class AddMediaListController extends AbstractController
             $mediaListManager->copyPoster($mediaList);
 
             // Récupérer les infos qu'on peut au début : titre des médias et id
-            $mediasIdAndTitleAndVideoUploader = $mediaManager->getMediasInfos($mediaList, ['%(id)s', '%(title)s', '%(uploader)s']);
+            $mediasIdAndTitleAndVideoUploader = $mediaManager->getMediasInfos($mediaList);
 
             // Ajouter le nb de vidéos trouvées dans la médialiste
             $totalMedias = count($mediasIdAndTitleAndVideoUploader);

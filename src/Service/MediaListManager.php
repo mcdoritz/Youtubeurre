@@ -3,8 +3,12 @@
 namespace App\Service;
 
 use App\Entity\MediaList;
+use App\Message\ProcessMediaMessage;
+use App\Repository\MediaRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class MediaListManager {
     private ProcessExecutor $processExecutor;
@@ -12,41 +16,96 @@ class MediaListManager {
     private YTDLPManager $ytdlpManager;
 
     private EntityManagerInterface $entityManager;
+    private LoggerInterface $logger;
+    private YTDLPManager $YTDLPManager;
+    private MediaRepository $mediaRepository;
+    private MediaManager $mediaManager;
+    private MessageBusInterface $messageBus;
+    private CommandManagerService $commandManager;
 
-    public function __construct(ProcessExecutor $processExecutor, FileManager $fileManager, EntityManagerInterface $entityManager, YTDLPManager $ytdlpManager) {
+
+    public function __construct(ProcessExecutor $processExecutor,
+                                FileManager $fileManager,
+                                EntityManagerInterface $entityManager,
+                                YTDLPManager $ytdlpManager,
+                                LoggerInterface $logger,
+                                YTDLPManager $YTDLPManager,
+                                MediaRepository $mediaRepository,
+                                MediaManager $mediaManager,
+                                MessageBusInterface $messageBus,
+                                CommandManagerService $commandManager) {
         $this->processExecutor = $processExecutor;
         $this->fileManager = $fileManager;
         $this->entityManager = $entityManager;
         $this->ytdlpManager = $ytdlpManager;
+        $this->logger = $logger;
+        $this->YTDLPManager = $YTDLPManager;
+        $this->mediaRepository = $mediaRepository;
+        $this->mediaManager = $mediaManager;
+        $this->messageBus = $messageBus;
+        $this->commandManager = $commandManager;
+    }
+
+    public function scan(MediaList $mediaList): string
+    {
+        // Vérifier si un scan est déjà en cours
+        if ($mediaList->getScanStatus() === "en cours") {
+            $this->logger->info("Scan dejà en cours");
+            return "Scan déjà en cours pour cette liste.";
+        }
+        $this->logger->info("Début du scan...");
+        // Mettre à jour yt-dlp
+        $this->YTDLPManager->updateYTDLP();
+
+        // Récupérer les médias déjà en base
+        $mediasAlreadyInDB = $this->mediaRepository->findBy(['mediaList' => $mediaList]);
+
+        // Récupérer les médias sur YouTube
+        $mediasOnYoutube = $this->mediaManager->getMediasInfos($mediaList);
+
+        $countYoutubeMedias = count($mediasOnYoutube);
+        $countMediasAlreadyInDB = count($mediasAlreadyInDB);
+        $diff = $countYoutubeMedias - $countMediasAlreadyInDB;
+
+        if($diff != 0){
+            $youtubeIdsInDB = array_map(fn($media) => $media->getYoutubeId(), $mediasAlreadyInDB);
+            $youtubeIdsOnYoutube = array_map(fn($media) => $media->getYoutubeId(), $mediasOnYoutube);
+
+            if ($diff > 0) { // Il y a plus de vidéos sur youtube que dans la bdd
+                $youtubeIdsToScan = array_diff($youtubeIdsOnYoutube, $youtubeIdsInDB);
+                $mediasToScan = array_filter($mediasOnYoutube, fn($media) => in_array($media->getYoutubeId(), $youtubeIdsToScan));
+                $mediasToScan = array_values($mediasToScan); // Ré-indexer
+                if ($countMediasAlreadyInDB < $countYoutubeMedias) {
+                    // Ajouter les médias
+                    $mediaList->setScanStatus('en cours');
+                    $mediaList->setTotalMedias($countYoutubeMedias);
+                    $mediaList->setRemainingMessages($diff);
+                    $this->persistMediaList($mediaList);
+
+                    $this->messageBus->dispatch(new ProcessMediaMessage($mediasToScan, $mediaList->getId()));
+
+                    return "$diff nouvelle(s) vidéo(s) ajoutée(s). Scan en cours...";
+                } else {
+                    // Supprimer les médias en trop
+                    $youtubeIdsToDelete = array_diff($youtubeIdsInDB, $youtubeIdsOnYoutube);
+                    $mediasToDelete = array_filter($mediasAlreadyInDB, fn($media) => in_array($media->getYoutubeId(), $youtubeIdsToDelete));
+                    $mediasToDelete = array_values($mediasToDelete);
+                    dd($mediasToDelete);
+                    $mediaManager->removeMedias($idsToDelete);
+
+                    return count($idsToDelete) . " vidéo(s) supprimée(s).";
+                }
+            }
+        }
+
+        return "Aucune nouvelle vidéo.";
     }
 
     public function getMediaListInfos(MediaList $mediaList): void {
         $url = $mediaList->getUrl();
         $mediaList->setType(str_contains($url, 'https://www.youtube.com/@') ? 1 : 0);
-
-        if($mediaList->getType() === 0){ // playlist
-            $command = [
-                'yt-dlp',
-                $url,
-                '--flat',
-                '--lazy-playlist',
-                '--playlist-items', '1',
-                '-O', '%(playlist_title)s'
-            ];
-
-
-        } else { // chaine
-            $command = [
-                'yt-dlp',
-                $url,
-                '--playlist-items', '1',
-                '-O', '%(uploader)s',
-            ];
-        }
-
-        $output = $this->processExecutor->execute($command);
-        $array = $this->ytdlpManager->trimResults($output, "none");
-        $mediaList->setTitle($array[0]);
+        $title = $this->commandManager->commandToGetMediaListTitle($mediaList);
+        $mediaList->setTitle($title);
 
     }
 

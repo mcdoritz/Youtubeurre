@@ -30,3 +30,4 @@ services:
     App\Service\FileManager:
         arguments:
             $projectDir: '%kernel.project_dir%'
+

@@ -16,6 +16,7 @@ class MediaListController extends AbstractController
     public function show(Request $request, int $id, MediaListRepository $mlr, MediaListManager $mediaListManager): Response
     {
         $mediaList = $mlr->find($id);
+
         $medias = $mediaList->getMedia();
         //dd(count($medias), $mediaList->getTotalMedias());
         if($mediaList->getScanStatus() != "en cours"){

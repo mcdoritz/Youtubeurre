@@ -1,5 +1,10 @@
 # YOUTUBEURRE
 
+Lancer worker :
+php bin/console messenger:consume async -vv
+
+Lancer scheduler :
+
 
 
 ### TO DO
@@ -37,3 +42,7 @@
 - 27/12/2024
   - Scan de vidéo : si vidéo supplémentaire, ne pas tout rescanner, juste les x dernières
   - Scan de vidéo : si vidéo en moins, tout rescanner
+- 28/12/2024
+  - Tâches programmées cron :
+    - Faire fonctionner avec scheduler en fonction de la valeur de cron de la médialiste
+    - Améliorer le form 

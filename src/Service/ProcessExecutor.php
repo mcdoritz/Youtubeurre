@@ -13,7 +13,7 @@ class ProcessExecutor {
         $process->run();
 
         // Retourne toujours la sortie, même si la commande échoue
-        return $process->getOutput();
+        return $process->getOutput() . $process->getErrorOutput();
     }
 
 }
